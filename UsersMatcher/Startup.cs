@@ -52,7 +52,10 @@ namespace UsersMatcher
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
-            app.UseMvc();
+            app.UseMvc(routes =>
+            {
+                routes.MapRoute("default", "{controller=Home}/{action=Index}");
+            });
         }
     }
 }
