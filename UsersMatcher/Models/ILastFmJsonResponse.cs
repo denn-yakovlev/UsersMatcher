@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 
 namespace UsersMatcher.Models
 {
-    public class Form
+    interface ILastFmJsonResponse<T>
     {
-        public string Name { get; set; }
-        //public string ApiMethod { get; set; }
+        List<T> Content { get; set; }
+
+        Attributes Attributes { get; set; }
     }
 }
