@@ -8,6 +8,9 @@ using UsersMatcher.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net;
+using Microsoft.Extensions.Caching.Memory;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace UsersMatcher.Controllers
 {
@@ -29,13 +32,13 @@ namespace UsersMatcher.Controllers
                 this.apiKey = apiKey;
             }
 
-            public async Task<ApiResponse<IList<Album>>> GetAllTopAlbumsAsync(string username) =>
-                await GetAllAsync<TopAlbums, Album>(username, "user.gettopalbums");
+            public async Task<ApiResponse<IList<Album>>> GetTopNAlbumsAsync(string username, int n) =>
+                await GetAllAsync<TopAlbums, Album>(username, "user.gettopalbums", n);
             
             public async Task<ApiResponse<IList<User>>> GetAllFriendsAsync(string username) => 
                 await GetAllAsync<Friends, User>(username, "user.getfriends");
 
-            private async Task<ApiResponse<IList<U>>> GetAllAsync<T, U>(string username, string apiMethod)
+            private async Task<ApiResponse<IList<U>>> GetAllAsync<T, U>(string username, string apiMethod, int maxCount = int.MaxValue)
                 where T: class, ILastFmJsonResponse<U>
             {
                 List<U> resultList = null;
@@ -47,17 +50,22 @@ namespace UsersMatcher.Controllers
                 if (jsonPageRequestResult.statusCode == okStatusCode)
                 {
                     var jsonPage = jsonPageRequestResult.body;
-
                     resultList = jsonPage.Content;
                     var totalPages = jsonPage.Attributes.TotalPages;
                     var page = 2;
-                    while (jsonPageRequestResult.statusCode == okStatusCode
-                        && page <= totalPages)
+                    int perPage = jsonPage.Attributes.PerPage;
+                    while (page <= totalPages
+                        && resultList.Count <= maxCount - perPage)
                     {
                         jsonPageRequestResult = await RequestJsonPageAsync<T, U>(query, page);
-                        jsonPage = jsonPageRequestResult.body;
-                        resultList.AddRange(jsonPage.Content);
-                        page++;
+
+                        if (jsonPageRequestResult.statusCode == okStatusCode)
+                        {
+                            jsonPage = jsonPageRequestResult.body;
+                            resultList.AddRange(jsonPage.Content);
+                            page++;
+                        }
+                        else break;                        
                     }
                 }
 
@@ -72,7 +80,7 @@ namespace UsersMatcher.Controllers
             private async Task<ApiResponse<T>> RequestJsonPageAsync<T, U>(string query, int page = 1)
                 where T: class, ILastFmJsonResponse<U>
             {
-                var response = await httpClient.GetAsync(query);
+                var response = await httpClient.GetAsync(query + $"&page={page}");
                 string content;
                 T body = default(T);
                 if (response.IsSuccessStatusCode)
@@ -99,6 +107,16 @@ namespace UsersMatcher.Controllers
             public T body;
         }
 
+        private static class Similarity
+        {
+            public static double Tanimoto<T> (ICollection<T> first, ICollection<T> second)
+            {
+                var intersection = first.Intersect(second);
+                var intersectionSize = intersection.Count();
+                var union = first.Union(second);
+                return (double)intersectionSize / (union.Count() - intersectionSize);
+            }
+        }
 
         public IActionResult Index()
         {
@@ -107,26 +125,44 @@ namespace UsersMatcher.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<PartialViewResult> HandleFormAsync(Form form)
+        public async Task<ViewResult> HandleFormAsync(Form form)
         {
             var apiKey = "48cdcb584772ebb3935f8f6289dc9d0b";
             var lastFmClient = new LastFmClient(apiKey);
-            var albumsResponse = await lastFmClient.GetAllTopAlbumsAsync(form.Name);
-            //return albumsResponse.body?.ToString() ?? "NULL";
-            if (albumsResponse.body != null)
+            var albumsResponse = await lastFmClient.GetTopNAlbumsAsync(form.Name, 100);
+            var similarityResults = new ConcurrentDictionary<User, double>();
+            if (albumsResponse.statusCode == 200)
             {
-                var friendsResponse = await lastFmClient.GetAllFriendsAsync(form.Name);
-                if (friendsResponse.body != null)
+                var albums = albumsResponse.body;
+                var friendsResponse = await lastFmClient.GetAllFriendsAsync(form.Name);               
+                if (friendsResponse.statusCode == 200)
                 {
-                    foreach (var friend in friendsResponse.body)
-                    {
+                    var friends = friendsResponse.body;
+                    //foreach (var friend in friends)
+                    //{
 
-                    }
+                    //}
+                    var locker = new object();   
+                    Task<ApiResponse<IList<Album>>> task;
+                    var tasks = friends.AsParallel().WithDegreeOfParallelism(5).Select(async friend =>
+                    {                     
+                        lock (locker)
+                        {
+                            task = lastFmClient.GetTopNAlbumsAsync(friend.Name, 100);
+                        }
+                        var albumsOfFriendResponse = await task;
+                        if (albumsOfFriendResponse.statusCode == 200)
+                        {
+                            var albumsOfFriend = albumsOfFriendResponse.body;
+                            similarityResults.TryAdd(friend, Similarity.Tanimoto(albums, albumsOfFriend));                         
+                        }
+                    });
+                    Task.WaitAll(tasks.AsSequential().ToArray());
 
                 }
 
-            }
-            return PartialView("_Result", "lalala that's a model"); 
+            } 
+            return View("_Result", similarityResults);
         }
 
     }

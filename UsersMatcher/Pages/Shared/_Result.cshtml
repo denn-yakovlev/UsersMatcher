@@ -1,3 +1,11 @@
-﻿@page
-@model string
+﻿@using UsersMatcher.Models;
+@using System.Collections.Concurrent;
+@model ConcurrentDictionary<User, double>
+
 Please wait...
+@foreach (var pair in Model)
+{
+    <div>
+        @pair.Key.Name - @pair.Value
+    </div>
+}
