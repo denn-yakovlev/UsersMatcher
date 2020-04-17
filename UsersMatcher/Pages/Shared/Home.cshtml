@@ -5,15 +5,12 @@
 <html>
     <head>
         <title>Users Matcher</title>
-        @*<script src="~/js/jquery.unobtrusive-ajax.js"></script>*@
     </head>
     <body>
         <form  method="post" asp-action="HandleFormAsync">
-            Name <input asp-for="Name"/><br />
-            @*<input type="radio" asp-for="ApiMethod" name="apimethod" value="user.getfriends" checked>Get friends<br />
-            <input type="radio" asp-for="ApiMethod" name="apimethod" value="user.gettopalbums">Get top albums<br />*@  
+            Name <input asp-for="Name" required/><br /> 
             <input type="submit"/>
         </form>
-        @*<partial name="_Result" />*@
+
     </body>
 </html>

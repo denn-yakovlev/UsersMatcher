@@ -1,11 +1,16 @@
 ﻿@using UsersMatcher.Models;
-@using System.Collections.Concurrent;
-@model ConcurrentDictionary<User, double>
-
-Please wait...
-@foreach (var pair in Model)
-{
-    <div>
-        @pair.Key.Name - @pair.Value
-    </div>
+@using System.Linq;
+@model UsersMatchResult
+@{ 
+    ViewData["Title"] = "Result";
+}
+<p>User name: <span style="font-weight: bold">@Model.UserName</span></p>
+<p>"Non-empty" friends count: @Model.ResultSize</p>
+<hr />
+@{ 
+    var ordered = Model.OrderByDescending(pair => pair.Value);
+    foreach(var pair in ordered)
+    {
+        <p> @pair.Key.Name - @String.Format("{0:F5}", pair.Value) </p>
+    }
 }

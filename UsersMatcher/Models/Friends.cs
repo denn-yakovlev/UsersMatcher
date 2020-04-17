@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 namespace UsersMatcher.Models
 {
-    public class Friends: ILastFmJsonResponse<User>
+    public class Friends : ILastFmJsonResponse<User>
     { 
         [JsonProperty("user")]
         public List<User> Content { get; set; }
