@@ -10,7 +10,7 @@ using UsersMatcher.Models;
 
 namespace UsersMatcher.Logic
 {
-    public class LastFmClient
+    public class LastFmClient: IDisposable
     {
         private static readonly HttpClient httpClient = new HttpClient()
         {
@@ -80,6 +80,31 @@ namespace UsersMatcher.Logic
                 body = body,
             };
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false;
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    httpClient.Dispose();
+                }
+                disposedValue = true;
+            }
+        }
+         ~LastFmClient()
+        {  
+            Dispose(false);
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion
 
         private struct ApiResponse<T>
         {
