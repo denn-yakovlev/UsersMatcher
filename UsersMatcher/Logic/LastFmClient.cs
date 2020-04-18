@@ -2,7 +2,6 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -49,7 +48,8 @@ namespace UsersMatcher.Logic
                     throw new LastFmApiError
                     {
                         StatusCode = jsonPageRequestResult.statusCode,
-                        Reason = jsonPageRequestResult.reason
+                        Reason = jsonPageRequestResult.reason,
+                        UserName = username
                     };
                 }     
                 var jsonPage = jsonPageRequestResult.body;

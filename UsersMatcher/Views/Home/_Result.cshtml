@@ -1,0 +1,22 @@
+﻿@using UsersMatcher.Models;
+@using System.Linq;
+@model UsersMatchResult
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Result for @Model.UserName</title>
+</head>
+<body>
+    <p>User name: <span style="font-weight: bold">@Model.UserName</span></p>
+    <p>"Non-empty" friends count: @Model.ResultSize</p>
+    <p>Time elapsed: @Model.Time</p>
+    <hr />
+    @{
+        var ordered = Model.OrderByDescending(pair => pair.Value);
+        foreach (var pair in ordered)
+        {
+            <p> @pair.Key.Name - @String.Format("{0:F5}", pair.Value) </p>
+        }
+    }
+</body>
+</html>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Caching.Memory;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,8 @@ namespace UsersMatcher.Models
         public int ResultSize => SimilarityResult.Count();
 
         public IEnumerable<KeyValuePair<User, double>> SimilarityResult { get; set; }
+
+        public TimeSpan Time { get; set; }
 
         public IEnumerator<KeyValuePair<User, double>> GetEnumerator()
         {

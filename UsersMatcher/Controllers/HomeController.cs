@@ -1,45 +1,53 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http;
 using UsersMatcher.Models;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System.Net;
-using Microsoft.Extensions.Caching.Memory;
-using System.Collections.Concurrent;
-using System.Threading;
 using UsersMatcher.Logic;
+using Microsoft.Extensions.Caching.Memory;
+using System;
 
 namespace UsersMatcher.Controllers
 {
 
     public class HomeController : Controller
     {
-      
+        private IMemoryCache _cache;
+
+        public HomeController(IMemoryCache cache)
+        {
+            _cache = cache;
+        }
+
         public IActionResult Index()
         {
-            return View("Home");
+            return View();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ViewResult> HandleFormAsync(Form form)
         {
-            UsersMatcherMain.TargetUserName = form.Name;
-            UsersMatcherMain.Metric = SimilarityMetrices.Tanimoto;
-            var resultTask = UsersMatcherMain.GetSimilarity();
-            try
+            UsersMatchResult result;
+            bool isCached = _cache.TryGetValue(form.Name, out result);
+            if (!isCached)
             {
-                return View("_Result", await resultTask);
-            }
-            catch (LastFmApiError err)
-            {
-                return View("_Error", err);
-            }
-        }
+                UsersMatcherMain.TargetUserName = form.Name;
+                UsersMatcherMain.Metric = SimilarityMetrices.Tanimoto;
+                try
+                {
+                    result = await UsersMatcherMain.GetSimilarityAsync();
+                    _cache.Set(form.Name, result, new MemoryCacheEntryOptions
+                    {
+                        // cache entry exprires in 10 minutes
+                        AbsoluteExpirationRelativeToNow = new TimeSpan(0, 10, 0)
+                    });
+                }
+                catch (LastFmApiError err)
+                {
+                    return View("_Error", err);
+                }
 
+            }
+            return View("_Result", result);
+        }
     }
 }

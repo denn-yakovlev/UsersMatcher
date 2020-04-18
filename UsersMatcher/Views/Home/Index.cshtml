@@ -1,0 +1,24 @@
+﻿@addTagHelper "*, Microsoft.AspNetCore.Mvc.TagHelpers"
+@using UsersMatcher.Models;
+@model Form
+
+<html>
+    <head>
+        <title>Users Matcher</title>
+    </head>
+    <body>
+        <h2>UsersMatcher</h2>
+        <p>Приложение, ищущее людей с одинаковыми предпочтениями на <a href="https://last.fm">last.fm</a>. </p>
+        <p>Предпочтения основываются на топ-100 альбомов, наиболее прослушиваемых пользователем</p>
+        <p>В качестве меры схожести используется коэффициент Танимото</p>
+        <p>
+
+        </p>
+        <div style="border: 5px solid grey; padding: 20px; width: 40%">
+            <form method="post" asp-action="HandleFormAsync">
+                Name <input asp-for="Name" required /><br />
+                <input type="submit" />
+            </form>
+        </div>
+    </body>
+</html>
