@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -32,18 +33,16 @@ namespace UsersMatcher.Logic
         private async Task<IEnumerable<U>> GetAllAsync<T, U>(string username, string apiMethod, int maxCount = int.MaxValue)
             where T : class, ILastFmJsonResponse<U>
         {
-            List<U> resultList = new List<U>();
-
             var query = $"?method={apiMethod}&user={username}&api_key={apiKey}&format=json";
             int page = 0;
             int perPage = 0;
             int totalPages = 0;
-            const int okStatusCode = (int)HttpStatusCode.OK;
+            var resultList = new List<U>();
             do
             {
                 page++;
                 var jsonPageRequestResult = await RequestJsonPageAsync<T, U>(query, page);
-                if (jsonPageRequestResult.statusCode != okStatusCode)
+                if (jsonPageRequestResult.statusCode != 200)
                 {
                     throw new LastFmApiError
                     {
@@ -51,14 +50,14 @@ namespace UsersMatcher.Logic
                         Reason = jsonPageRequestResult.reason,
                         UserName = username
                     };
-                }     
+                }
                 var jsonPage = jsonPageRequestResult.body;
                 totalPages = jsonPage.Attributes.TotalPages;
                 perPage = jsonPage.Attributes.PerPage;
                 resultList.AddRange(jsonPage.Content);
             } while (page < totalPages && resultList.Count < maxCount - perPage);
 
-            return resultList;           
+            return resultList;
         }
 
         private async Task<ApiResponse<T>> RequestJsonPageAsync<T, U>(string query, int page)

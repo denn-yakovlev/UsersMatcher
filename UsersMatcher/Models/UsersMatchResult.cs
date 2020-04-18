@@ -11,7 +11,9 @@ namespace UsersMatcher.Models
     {
         public string UserName { get; set; }
 
-        public int ResultSize => SimilarityResult.Count();
+        public int TotalFriendsCount { get; set; }
+
+        public int NonEmptyFriendsCount => SimilarityResult.Count();
 
         public IEnumerable<KeyValuePair<User, double>> SimilarityResult { get; set; }
 

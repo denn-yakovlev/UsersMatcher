@@ -38,6 +38,7 @@ namespace UsersMatcher.Logic
             return new UsersMatchResult
             {
                 UserName = TargetUserName,
+                TotalFriendsCount = friends.Count(),
                 Time = stopwatch.Elapsed,
                 // remove redundant KeyValuePairs produced by GetSimilarityByAlbumsAsync()
                 SimilarityResult = similarityResult.Where(pair => pair.Key != null)

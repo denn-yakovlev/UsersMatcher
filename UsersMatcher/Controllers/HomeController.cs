@@ -37,7 +37,7 @@ namespace UsersMatcher.Controllers
                     result = await UsersMatcherMain.GetSimilarityAsync();
                     _cache.Set(form.Name, result, new MemoryCacheEntryOptions
                     {
-                        // cache entry exprires in 10 minutes
+                        // cache entry expires in 10 minutes
                         AbsoluteExpirationRelativeToNow = new TimeSpan(0, 10, 0)
                     });
                 }

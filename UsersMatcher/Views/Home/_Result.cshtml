@@ -5,18 +5,52 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title>Result for @Model.UserName</title>
+    <style>
+
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border-collapse: collapse;
+            padding: 15px;
+        }
+
+
+    </style>
 </head>
 <body>
     <p>User name: <span style="font-weight: bold">@Model.UserName</span></p>
-    <p>"Non-empty" friends count: @Model.ResultSize</p>
+    <p>"Non-empty" friends count: @Model.NonEmptyFriendsCount/@Model.TotalFriendsCount</p>
     <p>Time elapsed: @Model.Time</p>
     <hr />
-    @{
+    <table>
+        <tr>
+            <th> Friend's name</th>
+            <th> Tanimoto coefficient</th>
+        </tr>
+        @{
+            var ordered = Model.OrderByDescending(pair => pair.Value);
+            foreach (var pair in ordered)
+            {
+                <tr>
+                    <td>
+                        @pair.Key.Name
+                    </td>
+                    <td>
+                        @String.Format("{0:F5}", pair.Value)
+                    </td>
+                </tr> @*@pair.Key.Name - @String.Format("{0:F5}", pair.Value)*@
+            }
+        }
+    </table>
+    @*@{
         var ordered = Model.OrderByDescending(pair => pair.Value);
         foreach (var pair in ordered)
         {
             <p> @pair.Key.Name - @String.Format("{0:F5}", pair.Value) </p>
         }
-    }
+    }*@
 </body>
 </html>
