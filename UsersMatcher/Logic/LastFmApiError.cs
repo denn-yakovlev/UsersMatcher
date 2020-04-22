@@ -5,23 +5,34 @@ namespace UsersMatcher.Logic
 {
     public class LastFmApiError : Exception
     {
-        public int StatusCode { get; set; }
-
-        public string Reason { get; set; }
+        public LastFmErrorCode Code { get;  }
 
         public string UserName { get; set; }
 
-        public override string Message
+        public override string Message { get; }
+
+        public LastFmApiError(LastFmErrorCode code, string message)
         {
-            get
-            {
-                switch (StatusCode)
-                {
-                    case 404: return $"It seems like user {UserName} doesn't exist";
-                    case 403: return $"Too many requests/Invalid auth token";
-                    default: return "";
-                }
-            }
+            Code = code;
+            Message = message;
         }
+    }
+
+    public enum LastFmErrorCode
+    {
+        InvalidService = 2,
+        InvalidMethod,
+        AuthenticationFailed,
+        InvalidFormat,
+        InvalidParameters,
+        InvalidResource,
+        OperationFailed,
+        InvalidSessionKey,
+        InvalidApiKey,
+        ServiceOffline,
+        InvalidMethodSig = 13,
+        TemporaryError = 16,
+        SuspendedApiKey = 26,
+        RateLimitExceeded = 29
     }
 }

@@ -38,46 +38,45 @@ namespace UsersMatcher.Logic
             int perPage = 0;
             int totalPages = 0;
             var resultList = new List<U>();
-            do
+            try
             {
-                page++;
-                var jsonPageRequestResult = await RequestJsonPageAsync<T, U>(query, page);
-                if (jsonPageRequestResult.statusCode != 200)
+                do
                 {
-                    throw new LastFmApiError
-                    {
-                        StatusCode = jsonPageRequestResult.statusCode,
-                        Reason = jsonPageRequestResult.reason,
-                        UserName = username
-                    };
-                }
-                var jsonPage = jsonPageRequestResult.body;
-                totalPages = jsonPage.Attributes.TotalPages;
-                perPage = jsonPage.Attributes.PerPage;
-                resultList.AddRange(jsonPage.Content);
-            } while (page < totalPages && resultList.Count < maxCount - perPage);
+                    page++;
+                    var jsonPage = await RequestJsonPageAsync<T, U>(query, page);
+                    totalPages = jsonPage.Attributes.TotalPages;
+                    perPage = jsonPage.Attributes.PerPage;
+                    resultList.AddRange(jsonPage.Content);
+                } while (page < totalPages && resultList.Count < maxCount - perPage);
 
-            return resultList;
+                return resultList;
+            }
+            catch (LastFmApiError exc)
+            {
+                exc.UserName = username;
+                throw;
+            }  
         }
 
-        private async Task<ApiResponse<T>> RequestJsonPageAsync<T, U>(string query, int page)
+        private async Task<T> RequestJsonPageAsync<T, U>(string query, int page)
             where T : class, ILastFmJsonResponse<U>
         {
-            string content;
             T body = default(T);
             var response = await httpClient.GetAsync(query + $"&page={page}");
+            var content = await response.Content.ReadAsStringAsync();
             if (response.IsSuccessStatusCode)
             {
-                content = await response.Content.ReadAsStringAsync();
                 JObject jObject = (JObject)JsonConvert.DeserializeObject(content);
                 body = jObject.First.First.ToObject<T>();
+                return body;
             }
-            return new ApiResponse<T>
+            else
             {
-                statusCode = (int)response.StatusCode,
-                reason = response.ReasonPhrase,
-                body = body,
-            };
+                var errorObj = JsonConvert.DeserializeAnonymousType(
+                    content, new { error = 0, message = ""}
+                    );
+                throw new LastFmApiError((LastFmErrorCode)errorObj.error, errorObj.message);
+            }
         }
 
         #region IDisposable Support
@@ -104,14 +103,5 @@ namespace UsersMatcher.Logic
             GC.SuppressFinalize(this);
         }
         #endregion
-
-        private struct ApiResponse<T>
-        {
-            public int statusCode;
-
-            public string reason;
-
-            public T body;
-        }
     }
 }

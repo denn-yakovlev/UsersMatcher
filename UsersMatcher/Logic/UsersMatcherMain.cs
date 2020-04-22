@@ -61,7 +61,8 @@ namespace UsersMatcher.Logic
             }
             catch(LastFmApiError err)
             {
-                if (err.StatusCode == 404)
+                if (err.Code == LastFmErrorCode.InvalidParameters 
+                    && err.Message == "User not found")
                     return new KeyValuePair<User, double>();
                 else throw;
             }
